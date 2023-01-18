@@ -25,12 +25,12 @@ RUN go build -ldflags "-extldflags \"-static\"" -tags="nolimit" github.com/drone
 
 FROM alpine AS Certs
 
-ENV DRONE_VERSION 2.16.0
 RUN apk add -U --no-cache ca-certificates tzdata
 
 FROM alpine:3.11
 EXPOSE 80 443
 VOLUME /data
+ENV DRONE_VERSION 2.16.0
 
 RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
 
