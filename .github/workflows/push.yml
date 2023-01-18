@@ -9,7 +9,7 @@ on:
         description: "build image and push"
 
 jobs:
-  path-context:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
