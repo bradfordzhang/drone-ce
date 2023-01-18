@@ -1,6 +1,31 @@
-# docker build --rm -f docker/Dockerfile -t drone/drone .
+FROM golang:alpine AS Builder
 
-FROM alpine:3.11 as alpine
+RUN apk add build-base && \
+    go env -w GO111MODULE=on
+
+ENV DRONE_VERSION 2.16.0
+
+WORKDIR /src
+
+# Build with online code
+RUN apk add curl && curl -L https://github.com/drone/drone/archive/refs/tags/v${DRONE_VERSION}.tar.gz -o v${DRONE_VERSION}.tar.gz && \
+    tar zxvf v${DRONE_VERSION}.tar.gz && rm v${DRONE_VERSION}.tar.gz
+# OR with offline tarball
+# ADD drone-${DRONE_VERSION}.tar.gz /src/
+
+WORKDIR /src/drone-${DRONE_VERSION}
+
+RUN go mod download
+
+ENV CGO_CFLAGS="-g -O2 -Wno-return-local-addr"
+
+RUN go build -ldflags "-extldflags \"-static\"" -tags="nolimit" github.com/drone/drone/cmd/drone-server
+
+
+
+FROM alpine AS Certs
+
+ENV DRONE_VERSION 2.16.0
 RUN apk add -U --no-cache ca-certificates tzdata
 
 FROM alpine:3.11
@@ -20,8 +45,7 @@ ENV DRONE_SERVER_HOST=localhost
 ENV DRONE_DATADOG_ENABLED=false
 ENV DRONE_DATADOG_ENDPOINT=https://stats.drone.ci/api/v1/series
 
-COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=alpine /usr/share/zoneinfo /usr/share/zoneinfo
-
-ADD release/linux/amd64/drone-server /bin/
+COPY --from=Certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=Builder /src/drone-${DRONE_VERSION}/drone-server /bin/drone-server
+COPY --from=Certs /usr/share/zoneinfo /usr/share/zoneinfo
 ENTRYPOINT ["/bin/drone-server"]
