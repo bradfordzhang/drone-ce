@@ -3,7 +3,7 @@ FROM golang:alpine AS Builder
 RUN apk add build-base && \
     go env -w GO111MODULE=on
 
-ENV DRONE_VERSION 2.16.0
+ENV DRONE_VERSION 2.17.0
 
 WORKDIR /src
 
@@ -30,7 +30,7 @@ RUN apk add -U --no-cache ca-certificates tzdata
 FROM alpine:3.11
 EXPOSE 80 443
 VOLUME /data
-ENV DRONE_VERSION 2.16.0
+ENV DRONE_VERSION 2.17.0
 
 RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
 
